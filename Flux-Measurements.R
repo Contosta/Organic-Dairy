@@ -25,6 +25,8 @@ library(dplyr)
 library(nlme)
 library(multcomp)
 library(pBrackets)
+library(reshape2)  # to draw pattern in boxplot
+
 
 #run script to introduce multiple comparison methods for 'gls' objects.
 model.matrix.gls <- function(object, ...) {
@@ -741,8 +743,18 @@ summary((glht(MCseanitr.mgmt_year, linfct = mcp(year_mgmt = "Tukey"))))
 
 ################################################################################
 ################################################################################
-#visualize data
+#Make Figures
 
+
+#calculate average seasonal fluxes to add to boxplots
+ac.5 = data.table(all.calc.4)
+
+ac.5$id = paste(ac.5$farm, ac.5$year, ac.5$mgmt, sep = " ")
+
+mseas = ac.5[ , list(farm = unique(farm), year = unique(year), mgmt = unique(mgmt), 
+                     carb = mean(totc_g), nitr = mean(totn_g)), by = id]
+
+mseas = mseas[order(mseas$farm, mseas$year, mseas$mgmt), ]
 #Seasonal CO2 fluxes 
 
 #setwd
@@ -753,79 +765,104 @@ setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-
 pdf.options(width= 4.5, height= 6.5, paper="letter", pointsize=10)
 
 #name pdf export file
-pdf(file="Figure_3_Revised.pdf")
+pdf(file="Seasonal_Fluxes.pdf")
 
 par(mfrow = c(2,1), mar = c(0.5, 0.5, 0.5, 0.5), oma = c(5,5,5,5))
 
-boxplot(totc_g ~ mgmt * year * farm, data = all.calc.4, axes = F, ylab = " ", ylim = c(25, 100), log = "y",
-        xlab = " ", col = c("coral", "dodgerblue", "indianred3", "gray50"))
+(bx = boxplot(log(totc_g) ~ mgmt * year * farm, data = all.calc.4, axes = F, ylab = " ", ylim = log(c(25, 110)),# log = "y",
+        xlab = " ", col = c("coral", "gray80")))
 box(lty = 1)
-axis(2, at = c(25, 35, 50, 70, 100))
-text(0.55, 100, "(A)")
+
+rect(c(3-0.4, 4-0.4, 7-0.4, 8-0.4, 11-0.4, 12-0.4), # left margin of box, position at x-axis 
+     bx$stats[2,                   # lower limit of box, may not need to change
+              c(3,4,7,8,11,12)],      # position of box at x-axis, subject to change
+     c(3+0.4, 4+0.4, 7+0.4, 8+0.4, 11+0.4, 12+0.4),  # right margin of box, position at x-axis 
+     bx$stats[4,  # upper limit of box, may not need to change
+              c(3,4,7,8,11,12)],      # position of box at x-axis
+     density=12, angle=45)
+points(log(mseas$carb), pch = 23, bg = "black")
+
+axis(2, at = log(c(25, 35, 50, 70, 100)), lab = c(25, 35, 50, 70, 100))
+text(0.55, log(109.5), "(A)")
 abline(v = 4.5, lty = 2, lwd = 0.5)
 abline(v = 8.5, lty = 2, lwd = 0.5)
 
-brackets(y1 = 90, y2 = 90, x1 = 0.65, x2 = 4.35, h = 6)
-brackets(x1 = 4.65, x2 = 8.35, y1 = 91, y2 = 91, h = 6)
-brackets(x1 = 8.65, x2 = 12.35, y1 = 91, y2 = 91, h = 6)
+braces(xfrom = 0.65, xto = 4.35, yfrom = 4.55, yto = 4.65)
+braces(xfrom = 4.65, xto = 8.35, yfrom = 4.55, yto = 4.65)
+braces(xfrom = 8.65, xto = 12.35, yfrom = 4.55, yto = 4.65)
 
-text(2.5, 100, "a")
-text(6.5, 100, "b")
-text(10.5, 100, "a")
+text(2.5, 4.7, "a", cex = 0.75)
+text(6.5, 4.7, "b", cex = 0.75)
+text(10.5, 4.7, "a", cex = 0.75)
 
-brackets(x1 = 0.65, x2 = 2.35, y1 = 55, y2 = 55, h = 6)
-brackets(x1 = 4.65, x2 = 6.35, y1 = 55, y2 = 55, h = 6)
-brackets(x1 = 8.65, x2 = 10.35, y1 = 75, y2 = 75, h = 6)
+braces(xfrom = 0.65, xto = 2.35, yfrom = 4, yto = 4.1)
+braces(xfrom = 4.65, xto = 6.35, yfrom = 4, yto = 4.1)
+braces(xfrom = 8.65, xto = 10.35, yfrom = 4.3, yto = 4.4)
 
-brackets(x1 = 2.65, x2 = 4.35, y1 = 75, y2 = 75, h = 6)
-brackets(x1 = 6.65, x2 = 8.35, y1 = 75, y2 = 75, h = 6)
-brackets(x1 = 10.65, x2 = 12.35, y1 = 75, y2 = 75, h = 6)
+braces(xfrom = 2.65, xto = 4.35, yfrom = 4.35, yto = 4.45)
+braces(xfrom = 6.65, xto = 8.35, yfrom = 4.35, yto = 4.45)
+braces(xfrom = 10.65, xto = 12.35, yfrom = 4.3, yto = 4.4)
 
-text(1.5, 65, "d")
-text(5.5, 65, "d")
-text(9.5, 85, "d")
+text(1.5, log(65), "d", cex = 0.75)
+text(5.5, log(65), "d", cex = 0.75)
+text(9.5, log(85), "d", cex = 0.75)
 
-text(3.5, 85, "e")
-text(7.5, 85, "e")
-text(11.5, 85, "e")
+text(3.5, log(90), "e", cex = 0.75)
+text(7.5, log(90), "e", cex = 0.75)
+text(11.5, log(90), "e", cex = 0.75)
+
 
 #mtext(side = 2, expression(Total~CO[2]* Flux ~ (t ~ CO[2]*-C~ha^{-1}~season^{-1})), cex = 1,
 #line = 2.5, outer = F)
-legend(9, 35, fill = c("coral", "dodgerblue", "indianred3", "gray50"), 
-       c("Grazed 2016", "Hayed 2016", "Grazed 2017", "Hayed 2017"), bty = "n", bg = "white", cex = 0.65)
 
+legend("bottomleft", legend=c("Grazed 2016", "Hayed 2016", "Grazed 2017", "Hayed 2017"), 
+       fill=c("coral", "gray80", "coral", "gray80"),
+       density=c(NA, NA, NA, NA), bty="n", border = "black", cex = 0.65) 
+legend("bottomleft", legend=c("Grazed 2016", "Hayed 2016", "Grazed 2017", "Hayed 2017"), 
+       fill=c("coral", "gray80", "black", "black"),
+       density=c(NA, NA, 20, 20), bty="n",border=c("black"), cex = 0.65) 
 
-boxplot(totn_g ~ mgmt * year * farm, data = all.calc.4, axes = F, ylab = " ", log = "y", ylim = c(0.004, 0.20),
-        xlab = " ", col = c("coral", "dodgerblue", "indianred3", "gray50"))
+(bx = boxplot(log(totn_g) ~ mgmt * year * farm, data = all.calc.4, axes = F, ylab = " ", ylim = log(c(0.004, 0.21)),# log = "y",
+              xlab = " ", col = c("coral", "gray80")))
 box(lty = 1)
-text(0.55, 0.20, "(B)")
+
+rect(c(3-0.4, 4-0.4, 7-0.4, 8-0.4, 11-0.4, 12-0.4), # left margin of box, position at x-axis 
+     bx$stats[2,                   # lower limit of box, may not need to change
+              c(3,4,7,8,11,12)],      # position of box at x-axis, subject to change
+     c(3+0.4, 4+0.4, 7+0.4, 8+0.4, 11+0.4, 12+0.4),  # right margin of box, position at x-axis 
+     bx$stats[4,  # upper limit of box, may not need to change
+              c(3,4,7,8,11,12)],      # position of box at x-axis
+     density=12, angle=45)
+points(log(mseas$nitr), pch = 23, bg = "black")
+
+text(0.55, log(0.20), "(B)")
 abline(v = 4.5, lty = 2, lwd = 0.5)
 abline(v = 8.5, lty = 2, lwd = 0.5)
 
-axis(2, at = c(0.005, 0.01, 0.022, 0.05, 0.100, 0.2), lab = c("0.005", "0.010", "0.022", "0.050", "0.100", "0.200"))
+axis(2, at = log(c(0.005, 0.025, 0.100)), lab = c("0.005", "0.025", "0.100"))
 axis(1, at = c(2.5, 6.5, 10.5), lab = c("VT", "NH", "ME"))
 
-brackets(y1 = 0.12, y2 = 0.12, x1 = 0.65, x2 = 4.35, h = 0.06)
-brackets(x1 = 4.65, x2 = 8.35, y1 = 0.12, y2 = 0.12, h = 0.06)
-brackets(x1 = 8.65, x2 = 12.35, y1 = 0.12, y2 = 0.12, h = 0.06)
+braces(xfrom = 0.65, xto = 4.35, yfrom = log(0.13), yto =log(0.18))
+braces(xfrom = 4.65, xto = 8.35, yfrom = log(0.13), yto =log(0.18))
+braces(xfrom = 8.65, xto = 12.35, yfrom = log(0.13), yto =log(0.18))
 
-text(2.5, 0.20, "a")
-text(6.5, 0.20, "b")
-text(10.5, 0.20, "b")
+text(2.5, log(0.205), "a", cex = 0.75)
+text(6.5, log(0.205), "b", cex = 0.75)
+text(10.5, log(0.205), "b", cex = 0.75)
 
-text(1, 0.022, "x")
-text(3, 0.050, "x")
-text(5, 0.040, "x")
-text(7, 0.030, "x")
-text(9, 0.055, "x")
-text(11, 0.13, "x")
+text(1, log(0.022), "x", cex = 0.75)
+text(3, log(0.050), "x", cex = 0.75)
+text(5, log(0.040), "x", cex = 0.75)
+text(7, log(0.060), "x", cex = 0.75)
+text(9, log(0.055), "x", cex = 0.75)
+text(11, log(0.135), "x", cex = 0.75)
 
-text(2, 0.05, "y")
-text(4, 0.018, "y")
-text(5.8, 0.080, "y")
-text(8, 0.022, "y")
-text(10, 0.035, "y")
-text(12, 0.035, "y")
+text(2, log(0.05), "y", cex = 0.75)
+text(4, log(0.018), "y", cex = 0.75)
+text(5.65, log(0.08), "y", cex = 0.75)
+text(8, log(0.022), "y", cex = 0.75)
+text(10, log(0.035), "y", cex = 0.75)
+text(12, log(0.035), "y", cex = 0.75)
 
 mtext(side = 2, expression(Total~CO[2]*~or~N[2]*O ~ Flux ~ (t ~CO[2]*-C~or~N[2]*O-N ~ ha^{-1} ~season^{-1})), cex = 1,
       line = 2.5, outer = T) 
