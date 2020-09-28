@@ -890,6 +890,522 @@ MCmwd.farm = gls(mwd ~ Farm, na.action = na.omit, subset = dat.3$Elevation == 15
 #set test adjustment as appropriate.
 summary((glht(MCmwd.farm, linfct = mcp(Farm = "Tukey"))))
 
+############################
+#Sand 0 to 15 cm   #
+############################
+
+#select random effects
+gls.sand15 = gls(sand ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 15)
+lme.sand15 = lme(fixed = sand ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+               random = ~1|id, subset = dat.3$Elevation == 15, data = dat.3)
+anova(gls.sand15, lme.sand15)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.sand15.1 = update(gls.sand15, weights = varIdent(form = ~1|Farm))
+var.sand15.2 = update(gls.sand15, weights = varIdent(form = ~1|Treatment))
+var.sand15.3 = update(gls.sand15, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.sand15, var.sand15.1, var.sand15.2, var.sand15.3)
+#variance structure does not improve model fit
+
+#examine fit of fixed effects
+anova(var.sand15.1, type = "marginal")
+#Farm and Treatment are significant
+
+#refit with REML to select fixed effects
+sand15.1 = update(var.sand15.1, method = "ML")
+
+#remove interaction between Farm * Treatment
+sand15.2 = update(sand15.1, sand ~ Farm + Treatment)
+
+#compare model fits
+anova(sand15.1, sand15.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(sand15.2, type = "marginal")
+#Both effects are significant. sand.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+sand15.3 = update(sand15.2, sand ~ Farm)
+
+#remove the effect of Treatment
+sand15.4 = update(sand15.2, sand ~ Treatment)
+
+#compare model fits
+anova(sand15.2, sand15.3)
+anova(sand15.2, sand15.4)
+#removal of either Treatment or Farm significantly worsens model fit
+#sand15.2 final model
+
+#refit with REML
+sand15.fin = update(sand15.2, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(sand15.fin)
+
+#make qqplot (verify normality)
+qqnorm(sand15.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(sand15.fin, linfct = mcp(Farm = "Tukey"))))
+summary((glht(sand15.fin, linfct = mcp(Treatment = "Tukey"))))
+
+############################
+#Sand 15 to 30 cm   #
+############################
+
+#select random effects
+gls.sand30 = gls(sand ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 30)
+lme.sand30 = lme(fixed = sand ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 30, data = dat.3)
+anova(gls.sand30, lme.sand30)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.sand30.1 = update(gls.sand30, weights = varIdent(form = ~1|Farm))
+var.sand30.2 = update(gls.sand30, weights = varIdent(form = ~1|Treatment))
+var.sand30.3 = update(gls.sand30, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.sand30, var.sand30.1, var.sand30.2, var.sand30.3)
+#variance structure of farm improves model fit
+
+#examine fit of fixed effects
+anova(var.sand30.1, type = "marginal")
+#All effects are significant. var.sand30.1 final model
+
+#refit with REML
+sand30.fin = var.sand30.1
+
+#plot model residuals (verify homogeneity of variance)
+plot(sand30.fin)
+
+#make qqplot (verify normality)
+qqnorm(sand30.fin)
+
+MC.sand30.Farm = update(sand30.fin, sand ~ Farm)
+MC.sand30.Trt = update(sand30.fin, sand ~ Treatment)
+MC.sand30.Farm_Trt = update(sand30.fin, sand ~ farm_trt)
+
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(MC.sand30.Farm, linfct = mcp(Farm = "Tukey"))))
+summary((glht(MC.sand30.Trt, linfct = mcp(Treatment = "Tukey"))))
+summary((glht(MC.sand30.Farm_Trt, linfct = mcp(farm_trt = "Tukey"))))
+
+############################
+#Sand 30 to 50 cm   #
+############################
+
+#select random effects
+gls.sand50 = gls(sand ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 50)
+lme.sand50 = lme(fixed = sand ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 50, data = dat.3)
+anova(gls.sand50, lme.sand50)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.sand50.1 = update(gls.sand50, weights = varIdent(form = ~1|Farm))
+var.sand50.2 = update(gls.sand50, weights = varIdent(form = ~1|Treatment))
+var.sand50.3 = update(gls.sand50, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.sand50, var.sand50.1, var.sand50.2, var.sand50.3)
+#variance structure of farm*treatment improves model fit
+
+#examine fit of fixed effects
+anova(var.sand50.3, type = "marginal")
+#All effects are significant. var.sand50.3 final model
+
+sand50.fin = update(var.sand50.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(sand50.fin)
+
+#make qqplot (verify normality)
+qqnorm(sand50.fin)
+
+MC.sand50.Farm = update(sand50.fin, sand ~ Farm)
+MC.sand50.Trt = update(sand50.fin, sand ~ Treatment)
+MC.sand50.Farm_Trt = update(sand50.fin, sand ~ farm_trt)
+
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(MC.sand50.Farm, linfct = mcp(Farm = "Tukey"))))
+summary((glht(MC.sand50.Trt, linfct = mcp(Treatment = "Tukey"))))
+summary((glht(MC.sand50.Farm_Trt, linfct = mcp(farm_trt = "Tukey"))))
+
+
+############################
+#Bulk Density 0 to 15 cm   #
+############################
+
+#select random effects
+gls.bd15 = gls(BD ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 15)
+lme.bd15 = lme(fixed = BD ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 15, data = dat.3)
+anova(gls.bd15, lme.bd15)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.bd15.1 = update(gls.bd15, weights = varIdent(form = ~1|Farm))
+var.bd15.2 = update(gls.bd15, weights = varIdent(form = ~1|Treatment))
+var.bd15.3 = update(gls.bd15, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.bd15, var.bd15.1, var.bd15.2, var.bd15.3)
+#variance structure of farm improves model fit
+
+#examine fit of fixed effects
+anova(var.bd15.1, type = "marginal")
+#none of the effects are significant
+
+#refit with REML to select fixed effects
+bd15.1 = update(var.bd15.1, method = "ML")
+
+#remove interaction between Farm * Treatment
+bd15.2 = update(bd15.1, BD ~ Farm + Treatment)
+
+#compare model fits
+anova(bd15.1, bd15.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(bd15.2, type = "marginal")
+#Both effects are significant. bd.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+bd15.3 = update(bd15.2, BD ~ Farm)
+
+#remove the effect of Treatment
+bd15.4 = update(bd15.2, BD ~ Treatment)
+
+#compare model fits
+anova(bd15.2, bd15.3)
+anova(bd15.2, bd15.4)
+#removal of either Treatment or Farm significantly worsens model fit
+#bd15.2 final model
+
+#refit with REML
+bd15.fin = update(bd15.2, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(bd15.fin)
+
+#make qqplot (verify normality)
+qqnorm(bd15.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(bd15.fin, linfct = mcp(Farm = "Tukey"))))
+summary((glht(bd15.fin, linfct = mcp(Treatment = "Tukey"))))
+
+############################
+#Bulk Density 15 to 30 cm   #
+############################
+
+#select random effects
+gls.bd30 = gls(BD ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 30)
+lme.bd30 = lme(fixed = BD ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+               random = ~1|id, subset = dat.3$Elevation == 30, data = dat.3)
+anova(gls.bd30, lme.bd30)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.bd30.1 = update(gls.bd30, weights = varIdent(form = ~1|Farm))
+var.bd30.2 = update(gls.bd30, weights = varIdent(form = ~1|Treatment))
+var.bd30.3 = update(gls.bd30, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.bd30, var.bd30.1, var.bd30.2, var.bd30.3)
+#variance structure of farm improves model fit
+
+#examine fit of fixed effects
+anova(var.bd30.1, type = "marginal")
+#only the effect of farm is significant
+
+#refit with REML to select fixed effects
+bd30.1 = update(var.bd30.1, method = "ML")
+
+#remove interaction between Farm * Treatment
+bd30.2 = update(bd30.1, BD ~ Farm + Treatment)
+
+#compare model fits
+anova(bd30.1, bd30.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(bd30.2, type = "marginal")
+#Both effects are significant. bd.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+bd30.3 = update(bd30.2, BD ~ Farm)
+
+#remove the effect of Treatment
+bd30.4 = update(bd30.2, BD ~ Treatment)
+
+#compare model fits
+anova(bd30.2, bd30.3)
+anova(bd30.2, bd30.4)
+#removal of Treatment has no effect on model fit; removal of Farm significantly worsens model fit
+#bd30.3 final model
+
+#refit with REML
+bd30.fin = update(bd30.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(bd30.fin)
+
+#make qqplot (verify normality)
+qqnorm(bd30.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(bd30.fin, linfct = mcp(Farm = "Tukey"))))
+
+############################
+#Bulk Density 30 to 50 cm   #
+############################
+
+#select random effects
+gls.bd50 = gls(BD ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 50)
+lme.bd50 = lme(fixed = BD ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+               random = ~1|id, subset = dat.3$Elevation == 50, data = dat.3)
+anova(gls.bd50, lme.bd50)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.bd50.1 = update(gls.bd50, weights = varIdent(form = ~1|Farm))
+var.bd50.2 = update(gls.bd50, weights = varIdent(form = ~1|Treatment))
+var.bd50.3 = update(gls.bd50, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.bd50, var.bd50.1, var.bd50.2, var.bd50.3)
+#variance structure of Treatment improves model fit
+
+#examine fit of fixed effects
+anova(var.bd50.2, type = "marginal")
+#only the effect of farm is significant
+
+#refit with REML to select fixed effects
+bd50.1 = update(var.bd50.2, method = "ML")
+
+#remove interaction between Farm * Treatment
+bd50.2 = update(bd50.1, BD ~ Farm + Treatment)
+
+#compare model fits
+anova(bd50.1, bd50.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(bd50.2, type = "marginal")
+#Only the effect of farm is significant. bd.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+bd50.3 = update(bd50.2, BD ~ Farm)
+
+#remove the effect of Treatment
+bd50.4 = update(bd50.2, BD ~ Treatment)
+
+#compare model fits
+anova(bd50.2, bd50.3)
+anova(bd50.2, bd50.4)
+#removal of Treatment has no effect on model fit; removal of Farm significantly worsens model fit
+#bd50.3 final model
+
+#refit with REML
+bd50.fin = update(bd50.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(bd50.fin)
+
+#make qqplot (verify normality)
+qqnorm(bd50.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(bd50.fin, linfct = mcp(Farm = "Tukey"))))
+
+############################
+#Percent C 0 to 15 cm      #
+############################
+
+#select random effects
+gls.perC15 = gls(perC ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 15)
+lme.perC15 = lme(fixed = perC ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 15, data = dat.3)
+anova(gls.perC15, lme.perC15)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perC15.1 = update(gls.perC15, weights = varIdent(form = ~1|Farm))
+var.perC15.2 = update(gls.perC15, weights = varIdent(form = ~1|Treatment))
+var.perC15.3 = update(gls.perC15, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perC15, var.perC15.1, var.perC15.2, var.perC15.3)
+#variance structures do not improve model fit
+
+#examine fit of fixed effects
+anova(gls.perC15, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+perC15.1 = update(gls.perC15, method = "ML")
+
+#remove interaction between Farm * Treatment
+perC15.2 = update(perC15.1, perC ~ Farm + Treatment)
+
+#compare model fits
+anova(perC15.1, perC15.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(perC15.2, type = "marginal")
+#both Treatment and Farm are significant. perC.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+perC15.3 = update(perC15.2, perC ~ Farm)
+
+#remove the effect of Treatment
+perC15.4 = update(perC15.2, perC ~ Treatment)
+
+#compare model fits
+anova(perC15.2, perC15.3)
+anova(perC15.2, perC15.4)
+#removal of both Treatment and Farm significantly worsens model fit
+#perC15.2 final model
+
+#refit with REML
+perC15.fin = update(perC15.2, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(perC15.fin)
+
+#make qqplot (verify normality)
+qqnorm(perC15.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(perC15.fin, linfct = mcp(Farm = "Tukey"))))
+summary((glht(perC15.fin, linfct = mcp(Treatment = "Tukey"))))
+
+
+############################
+#Percent C 15 to 30 cm     #
+############################
+
+#select random effects
+gls.perC30 = gls(perC ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 30)
+lme.perC30 = lme(fixed = perC ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 30, data = dat.3)
+anova(gls.perC30, lme.perC30)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perC30.1 = update(gls.perC30, weights = varIdent(form = ~1|Farm))
+var.perC30.2 = update(gls.perC30, weights = varIdent(form = ~1|Treatment))
+var.perC30.3 = update(gls.perC30, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perC30, var.perC30.1, var.perC30.2, var.perC30.3)
+#variance structures do not improve model fit
+
+#examine fit of fixed effects
+anova(gls.perC30, type = "marginal")
+#none of the effects are significant
+
+#refit with REML to select fixed effects
+perC30.1 = update(gls.perC30, method = "ML")
+
+#remove interaction between Farm * Treatment
+perC30.2 = update(perC30.1, perC ~ Farm + Treatment)
+
+#compare model fits
+anova(perC30.1, perC30.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(perC30.2, type = "marginal")
+#neither of the effects are significant. perC.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+perC30.3 = update(perC30.2, perC ~ Farm)
+
+#remove the effect of Treatment
+perC30.4 = update(perC30.2, perC ~ Treatment)
+
+#compare model fits
+anova(perC30.2, perC30.3)
+anova(perC30.2, perC30.4)
+#removal of both Treatment and Farm has no effect on model fit.
+
+############################
+#Percent C 30 to 50 cm     #
+############################
+
+#select random effects
+gls.perC50 = gls(perC ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 50)
+lme.perC50 = lme(fixed = perC ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 50, data = dat.3)
+anova(gls.perC50, lme.perC50)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perC50.1 = update(gls.perC50, weights = varIdent(form = ~1|Farm))
+var.perC50.2 = update(gls.perC50, weights = varIdent(form = ~1|Treatment))
+var.perC50.3 = update(gls.perC50, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perC50, var.perC50.1, var.perC50.2, var.perC50.3)
+#variance structures of Farm * Treatment improves model fit
+
+#examine fit of fixed effects
+anova(var.perC50.3, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+perC50.1 = update(var.perC50.3, method = "ML")
+
+#remove interaction between Farm * Treatment
+perC50.2 = update(perC50.1, perC ~ Farm + Treatment)
+
+#compare model fits
+anova(perC50.1, perC50.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(perC50.2, type = "marginal")
+#Only Farm are significant. perC.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+perC50.3 = update(perC50.2, perC ~ Farm)
+
+#remove the effect of Treatment
+perC50.4 = update(perC50.2, perC ~ Treatment)
+
+#compare model fits
+anova(perC50.2, perC50.3)
+anova(perC50.2, perC50.4)
+#removal of Treatment has no effect on model fit; removal of Farm significantly worsens model fit
+#perC50.3 final model
+
+#refit with REML
+perC50.fin = update(perC50.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(perC50.fin)
+
+#make qqplot (verify normality)
+qqnorm(perC50.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(perC50.fin, linfct = mcp(Farm = "Tukey"))))
 
 ############################
 #Total C 0 to 15 cm        #
@@ -1128,6 +1644,182 @@ qqnorm(ctot.fin)
 #set test adjustment as appropriate.
 summary((glht(ctot.fin, linfct = mcp(Farm = "Tukey"))))
 
+###################################
+#Labile C concentration 0 to 15 cm#
+###################################
+
+#select random effects
+gls.POXc15 = gls(POXc ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 15)
+lme.POXc15 = lme(fixed = POXc ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 15, data = dat.3)
+anova(gls.POXc15, lme.POXc15)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.POXc15.1 = update(gls.POXc15, weights = varIdent(form = ~1|Farm))
+var.POXc15.2 = update(gls.POXc15, weights = varIdent(form = ~1|Treatment))
+var.POXc15.3 = update(gls.POXc15, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.POXc15, var.POXc15.1, var.POXc15.2, var.POXc15.3)
+#variance structure of farm improves model fit
+
+#examine fit of fixed effects
+anova(var.POXc15.1, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+POXc15.1 = update(var.POXc15.1, method = "ML")
+
+#remove interaction between Farm * Treatment
+POXc15.2 = update(POXc15.1, POXc ~ Farm + Treatment)
+
+#compare model fits
+anova(POXc15.1, POXc15.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(POXc15.2, type = "marginal")
+#only Farm is significant. POXc.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+POXc15.3 = update(POXc15.2, POXc ~ Farm)
+
+#remove the effect of Treatment
+POXc15.4 = update(POXc15.2, POXc ~ Treatment)
+
+#compare model fits
+anova(POXc15.2, POXc15.3)
+anova(POXc15.2, POXc15.4)
+#removal of Treatment has no effect on model fit; removal of Farm significantly worsens model fit
+#POXc15.3 final model
+
+#refit with REML
+POXc15.fin = update(POXc15.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(POXc15.fin)
+
+#make qqplot (verify normality)
+qqnorm(POXc15.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(POXc15.fin, linfct = mcp(Farm = "Tukey"))))
+
+###################################
+#Labile C concentration 15 to 30 cm#
+###################################
+
+#select random effects
+gls.POXc30 = gls(POXc ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 30)
+lme.POXc30 = lme(fixed = POXc ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 30, data = dat.3)
+anova(gls.POXc30, lme.POXc30)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.POXc30.1 = update(gls.POXc30, weights = varIdent(form = ~1|Farm))
+var.POXc30.2 = update(gls.POXc30, weights = varIdent(form = ~1|Treatment))
+var.POXc30.3 = update(gls.POXc30, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.POXc30, var.POXc30.1, var.POXc30.2, var.POXc30.3)
+#variance structure of farm improves model fit
+
+#examine fit of fixed effects
+anova(var.POXc30.1, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+POXc30.1 = update(var.POXc30.1, method = "ML")
+
+#remove interaction between Farm * Treatment
+POXc30.2 = update(POXc30.1, POXc ~ Farm + Treatment)
+
+#compare model fits
+anova(POXc30.1, POXc30.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(POXc30.2, type = "marginal")
+#none of the effects are significant. POXc.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+POXc30.3 = update(POXc30.2, POXc ~ Farm)
+
+#remove the effect of Treatment
+POXc30.4 = update(POXc30.2, POXc ~ Treatment)
+
+#compare model fits
+anova(POXc30.2, POXc30.3)
+anova(POXc30.2, POXc30.4)
+#no significant effects
+
+###################################
+#Labile C concentration 30 to 50 cm#
+###################################
+
+#select random effects
+gls.POXc50 = gls(POXc ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 50)
+lme.POXc50 = lme(fixed = POXc ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 50, data = dat.3)
+anova(gls.POXc50, lme.POXc50)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.POXc50.1 = update(gls.POXc50, weights = varIdent(form = ~1|Farm))
+var.POXc50.2 = update(gls.POXc50, weights = varIdent(form = ~1|Treatment))
+var.POXc50.3 = update(gls.POXc50, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.POXc50, var.POXc50.1, var.POXc50.2, var.POXc50.3)
+#variance structure does not improve model fit
+
+#examine fit of fixed effects
+anova(gls.POXc50, type = "marginal")
+#Both Farm and Treatment are significant
+
+#refit with REML to select fixed effects
+POXc50.1 = update(gls.POXc50, method = "ML")
+
+#remove interaction between Farm * Treatment
+POXc50.2 = update(POXc50.1, POXc ~ Farm + Treatment)
+
+#compare model fits
+anova(POXc50.1, POXc50.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(POXc50.2, type = "marginal")
+#only Farm is significant. POXc.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+POXc50.3 = update(POXc50.2, POXc ~ Farm)
+
+#remove the effect of Treatment
+POXc50.4 = update(POXc50.2, POXc ~ Treatment)
+
+#compare model fits
+anova(POXc50.2, POXc50.3)
+anova(POXc50.2, POXc50.4)
+#removal of Treatment has no effect on model fit; removal of Farm significantly worsens model fit
+#POXc50.3 final model
+
+#refit with REML
+POXc50.fin = update(POXc50.3, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(POXc50.fin)
+
+#make qqplot (verify normality)
+qqnorm(POXc50.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(POXc50.fin, linfct = mcp(Farm = "Tukey"))))
+
+
 ############################
 #Labile C 0 to 15 cm      #
 ############################
@@ -1310,7 +2002,7 @@ qqnorm(labc50.fin)
 summary((glht(labc50.fin, linfct = mcp(Farm = "Tukey"))))
 
 #########################
-#Total C from 0 to 50 cm#
+#Labile C from 0 to 50 cm#
 #########################
 
 #select random effects
@@ -1370,6 +2062,170 @@ qqnorm(POXc.fin)
 #use glht function and acquire summary of multiple comparisons
 #set test adjustment as appropriate.
 summary((glht(POXc.fin, linfct = mcp(Farm = "Tukey"))))
+
+############################
+#Percent N 0 to 15 cm      #
+############################
+
+#select random effects
+gls.perN15 = gls(perN ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 15)
+lme.perN15 = lme(fixed = perN ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+                 random = ~1|id, subset = dat.3$Elevation == 15, data = dat.3)
+anova(gls.perN15, lme.perN15)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perN15.1 = update(gls.perN15, weights = varIdent(form = ~1|Farm))
+var.perN15.2 = update(gls.perN15, weights = varIdent(form = ~1|Treatment))
+var.perN15.3 = update(gls.perN15, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perN15, var.perN15.1, var.perN15.2, var.perN15.3)
+#variance structures do not improve model fit
+
+#examine fit of fixed effects
+anova(gls.perN15, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+perN15.1 = update(gls.perN15, method = "ML")
+
+#remove interaction between Farm * Treatment
+perN15.2 = update(perN15.1, perN ~ Farm + Treatment)
+
+#compare model fits
+anova(perN15.1, perN15.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(perN15.2, type = "marginal")
+#Both Farm and Treatment are significant. ntot.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+perN15.3 = update(perN15.2, perN ~ Farm)
+
+#remove the effect of Treatment
+perN15.4 = update(perN15.2, perN ~ Treatment)
+
+#compare model fits
+anova(perN15.2, perN15.3)
+anova(perN15.2, perN15.4)
+#removal of either Farm or Treatment significantly worsens model fit
+#perN15.2 final model
+
+#refit with REML
+perN15.fin = update(perN15.2, method = "REML")
+
+#plot model residuals (verify homogeneity of variance)
+plot(perN15.fin)
+
+#make qqplot (verify normality)
+qqnorm(perN15.fin)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(perN15.fin, linfct = mcp(Farm = "Tukey"))))
+summary((glht(perN15.fin, linfct = mcp(Treatment = "Tukey"))))
+
+############################
+#Percent N 15 to 30 cm     #
+############################
+
+#select random effects
+gls.perN30 = gls(perN ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 30)
+lme.perN30 = lme(fixed = perN ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+               random = ~1|id, subset = dat.3$Elevation == 30, data = dat.3)
+anova(gls.perN30, lme.perN30)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perN30.1 = update(gls.perN30, weights = varIdent(form = ~1|Farm))
+var.perN30.2 = update(gls.perN30, weights = varIdent(form = ~1|Treatment))
+var.perN30.3 = update(gls.perN30, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perN30, var.perN30.1, var.perN30.2, var.perN30.3)
+#variance structures do not improve model fit
+
+#examine fit of fixed effects
+anova(gls.perN30, type = "marginal")
+#only Farm is significant
+
+#refit with REML to select fixed effects
+perN30.1 = update(gls.perN30, method = "ML")
+
+#remove interaction between Farm * Treatment
+perN30.2 = update(perN30.1, perN ~ Farm + Treatment)
+
+#compare model fits
+anova(perN30.1, perN30.2)
+#no difference in model fit
+
+#examine fit of remaining single effects
+anova(perN30.2, type = "marginal")
+#No effects are significant. ntot.2 is now full model
+
+#remove each single fixed effect in turn
+#remove the effect of Treatment
+perN30.3 = update(perN30.2, perN ~ Farm)
+
+#remove the effect of Treatment
+perN30.4 = update(perN30.2, perN ~ Treatment)
+
+#compare model fits
+anova(perN30.2, perN30.3)
+anova(perN30.2, perN30.4)
+#no signficant effects
+
+############################
+#Percent N 30 to 50 cm     #
+############################
+
+#select random effects
+gls.perN50 = gls(perN ~ Farm + Treatment + Farm:Treatment, data = dat.3, na.action = na.omit, subset = dat.3$Elevation == 50)
+lme.perN50 = lme(fixed = perN ~ Farm + Treatment + Farm:Treatment, na.action = na.omit, 
+               random = ~1|id, subset = dat.3$Elevation == 50, data = dat.3)
+anova(gls.perN50, lme.perN50)
+#random effects do not improve overall model fit
+
+#select variance structure
+var.perN5050.1 = update(gls.perN50, weights = varIdent(form = ~1|Farm))
+var.perN5050.2 = update(gls.perN50, weights = varIdent(form = ~1|Treatment))
+var.perN5050.3 = update(gls.perN50, weights = varIdent(form = ~1|Farm*Treatment))
+
+BIC(gls.perN50, var.perN5050.1, var.perN5050.2, var.perN5050.3)
+#variance structure of Treatment do improves model fit
+
+#examine fit of fixed effects
+anova(var.perN5050.2, type = "marginal")
+#all effects are significant
+
+#refit with REML to select fixed effects
+perN50.1 = update(var.perN5050.2, method = "ML")
+
+#remove interaction between Farm * Treatment
+perN50.2 = update(perN50.1, perN ~ Farm + Treatment)
+
+#compare model fits
+anova(perN50.1, perN50.2)
+#significant difference in model fit. var.perN5050.2 final model
+
+perN50.fin = var.perN5050.2
+
+#plot model residuals (verify homogeneity of variance)
+plot(perN50.fin)
+
+#make qqplot (verify normality)
+qqnorm(perN50.fin)
+
+MCperN50.Farm = gls(perN ~ Farm, data = dat.3, subset = dat.3$Elevation == 50, na.action = na.omit, weights = varIdent(form = ~1|Treatment))
+MCperN50.Trt = gls(perN ~ Treatment, data = dat.3, subset = dat.3$Elevation == 50, na.action = na.omit, weights = varIdent(form = ~1|Treatment))
+MCperN50.Farm_Trt = gls(perN ~ farm_trt, data = dat.3, subset = dat.3$Elevation == 50, na.action = na.omit, weights = varIdent(form = ~1|Treatment))
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+summary((glht(MCperN50.Farm, linfct = mcp(Farm = "Tukey"))))
+summary((glht(MCperN50.Trt, linfct = mcp(Treatment = "Tukey"))))
+summary((glht(MCperN50.Farm_Trt, linfct = mcp(farm_trt = "Tukey"))))
 
 ############################
 #Total N 0 to 15 cm        #
@@ -1857,8 +2713,196 @@ summary((glht(cn.fin, linfct = mcp(Treatment = "Tukey"))))
 ##############################################################################################
 ##############################################################################################
 ##############################################################################################
+#Make Tables
+
+##############################################
+#Table 4 (aggregate size distribution and MWD)
+##############################################
+
+dat.3$id2 = as.factor(paste(dat.3$Farm, dat.3$Treatment, sep = " "))
+agsub = data.table(dat.3[dat.3$Elevation == "15", ])
+
+tab4 = agsub[ , list(mag2000 = mean(ag2000, na.rm = T), loag2000 = quantile(ag2000, 0.025, na.rm = T),
+  hiag2000 = quantile(ag2000, 0.975, na.rm = T),
+  mag250 = mean(ag250, na.rm = T), loag250 = quantile(ag250, 0.025, na.rm = T),
+  hiag250 = quantile(ag250, 0.975, na.rm = T),
+  mag53 = mean(ag53, na.rm = T), loag53 = quantile(ag53, 0.025, na.rm = T),
+  hiag53 = quantile(ag53, 0.975, na.rm = T),
+  mag0 = mean(ag0, na.rm = T), loag0 = quantile(ag0, 0.025, na.rm = T),
+  hiag0 = quantile(ag0, 0.975, na.rm = T),
+  mmwd = mean(mwd, na.rm = T), lomwd = quantile(mwd, 0.025, na.rm = T),
+  himwd = quantile(mwd, 0.975, na.rm = T)), by = id2]
+
+#separate out just the mean values and rename
+tab4.mn = tab4[ , c("id2", "mag2000", "mag250", "mag53", "mag0", "mmwd")]
+names(tab4.mn) = c("id2", "ag2000", "ag250", "ag53", "ag0", "mwd")
+
+#separate out lower quartile
+tab4.lo = tab4[ , c("id2", "loag2000", "loag250", "loag53", "loag0", "lomwd")]
+names(tab4.lo) = c("id2", "ag2000", "ag250", "ag53", "ag0", "mwd")
+
+#separate out upper quartile
+tab4.hi = tab4[ , c("id2", "hiag2000", "hiag250", "hiag53", "hiag0", "himwd")]
+names(tab4.hi) = c("id2", "ag2000", "ag250", "ag53", "ag0", "mwd")
+
+#melt tables and add column names
+tab4.mnmel = melt(tab4.mn, id.vars = "id2")
+names(tab4.mnmel) = c("id2", "frac", "avg")
+
+tab4.lomel = melt(tab4.lo, id.vars = "id2")
+names(tab4.lomel) = c("id2", "frac", "lo")
+
+tab4.himel = melt(tab4.hi, id.vars = "id2")
+names(tab4.himel) = c("id2", "frac", "hi")
+
+#round avg, lo, and hi values to two sig. digs.
+tab4.mnmel$avg = round(tab4.mnmel$avg, 2)
+tab4.lomel$lo = round(tab4.lomel$lo, 2)
+tab4.himel$hi = round(tab4.himel$hi, 2)
+
+#make new id column that contains Farm, Management, and fraction
+tab4.mnmel$id = paste(tab4.mnmel$id2, tab4.mnmel$frac, sep = " ")
+tab4.lomel$id = paste(tab4.lomel$id2, tab4.lomel$frac, sep = " ")
+tab4.himel$id = paste(tab4.himel$id2, tab4.himel$frac, sep = " ")
+
+#remove id2 and frac columns
+tab4.mnmel = tab4.mnmel[ , -c(1:2)]
+tab4.lomel = tab4.lomel[ , -c(1:2)]
+tab4.himel = tab4.himel[ , -c(1:2)]
+
+#merge tables together
+tab4.1 = merge(tab4.mnmel, tab4.lomel, by.x = "id", by.y = "id")
+tab4.2 = merge(tab4.1, tab4.himel, by.x = "id", by.y = "id")
+
+#make new column that contains the mean +- the upper and lower quartiles
+tab4.2$all = paste(tab4.2$avg, " (", tab4.2$lo, ", ", tab4.2$hi, ")", sep = "")
+
+#split the id string
+sps <- data.frame(do.call(rbind, str_split(tab4.2$id, " ")))
+names(sps) <- c("farm", "mgmt", "frac")
+
+#add to dataframe
+tab4.3 = cbind(sps, tab4.2)
+
+#remove columns for id, avg, lo, and hi
+tab4.3 = tab4.3[ , -c(4:7)]
+
+#select rows that are just FRF Graze
+tab4.4 = tab4.3[tab4.3$farm == "FRF" & tab4.3$mgmt == "Graze", ]
+names(tab4.4) = c("farm", "mgmt", "frac", "FRF Graze")
+
+#add columns for FRF Hay, etc.
+tab4.5 = cbind(tab4.4, "FRF Hay" = tab4.3[tab4.3$farm == "FRF" & tab4.3$mgmt == "Hay",]$all, 
+              "ORG Graze" = tab4.3[tab4.3$farm == "ORG" & tab4.3$mgmt == "Graze",]$all,
+              "ORG Hay" = tab4.3[tab4.3$farm == "ORG" & tab4.3$mgmt == "Hay",]$all,
+              "WNF Graze" = tab4.3[tab4.3$farm == "WNF" & tab4.3$mgmt == "Graze",]$all,
+              "WNF Hay" = tab4.3[tab4.3$farm == "WNF" & tab4.3$mgmt == "Hay",]$all)
+
+##############################################################
+#SI Table 1 (CN concentrations and stocks, sand, bd, by depth)
+##############################################################
+
+dat.3dt = data.table(dat.3)
+
+dat.3dt$id3 = paste(dat.3dt$Farm, dat.3dt$Treatment, dat.3dt$Elevation, sep = " ")
+
+sitab1 = dat.3dt[ , list(mperC = mean(perC, na.rm = T), loperC = quantile(perC, 0.025, na.rm = T),
+                     hiperC = quantile(perC, 0.975, na.rm = T),
+                     mPOXc = mean(POXc, na.rm = T), loPOXc = quantile(POXc, 0.025, na.rm = T),
+                     hiPOXc = quantile(POXc, 0.975, na.rm = T),
+                     mperN = mean(perN, na.rm = T), loperN = quantile(perN, 0.025, na.rm = T),
+                     hiperN = quantile(perN, 0.975, na.rm = T),
+                     mcstock.1 = mean(cstock.1, na.rm = T), locstock.1 = quantile(cstock.1, 0.025, na.rm = T),
+                     hicstock.1 = quantile(cstock.1, 0.975, na.rm = T),
+                     mlabc.1 = mean(labc.1, na.rm = T), lolabc.1 = quantile(labc.1, 0.025, na.rm = T),
+                     hilabc.1 = quantile(labc.1, 0.975, na.rm = T),
+                     mnstock.1 = mean(nstock.1, na.rm = T), lonstock.1 = quantile(nstock.1, 0.025, na.rm = T),
+                     hinstock.1 = quantile(nstock.1, 0.975, na.rm = T),
+                     mCN = mean(CN, na.rm = T), loCN = quantile(CN, 0.025, na.rm = T),
+                     hiCN = quantile(CN, 0.975, na.rm = T),
+                     mBD = mean(BD, na.rm = T), loBD = quantile(BD, 0.025, na.rm = T),
+                     hiBD = quantile(BD, 0.975, na.rm = T),
+                     msand = mean(sand, na.rm = T), losand = quantile(sand, 0.025, na.rm = T),
+                     hisand = quantile(sand, 0.975, na.rm = T)), by = id3]
+
+#separate out just the mean values and rename
+sitab1.mn = sitab1[ , c("id3", "mperC", "mPOXc", "mperN", "mcstock.1", "mlabc.1", "mnstock.1", "mCN", "mBD", "msand")]
+names(sitab1.mn) = c("id3", "perC", "POXc", "perN", "cstock.1", "labc.1", "nstock.1", "CN", "BD", "sand")
+
+#separate out lower quartile
+sitab1.lo = sitab1[ , c("id3", "loperC", "loPOXc", "loperN", "locstock.1", "lolabc.1", "lonstock.1", "loCN", "loBD", "losand")]
+names(sitab1.lo) = c("id3", "perC", "POXc", "perN", "cstock.1", "labc.1", "nstock.1", "CN", "BD", "sand")
+
+#separate out upper quartile
+sitab1.hi = sitab1[ , c("id3", "hiperC", "hiPOXc", "hiperN", "hicstock.1", "hilabc.1", "hinstock.1", "hiCN", "hiBD", "hisand")]
+names(sitab1.hi) = c("id3", "perC", "POXc", "perN", "cstock.1", "labc.1", "nstock.1", "CN", "BD", "sand")
+
+#melt tables and add column names
+sitab1.mnmel = melt(sitab1.mn, id.vars = "id3")
+names(sitab1.mnmel) = c("id3", "frac", "avg")
+
+sitab1.lomel = melt(sitab1.lo, id.vars = "id3")
+names(sitab1.lomel) = c("id3", "frac", "lo")
+
+sitab1.himel = melt(sitab1.hi, id.vars = "id3")
+names(sitab1.himel) = c("id3", "frac", "hi")
+
+#round avg, lo, and hi values to two sig. digs.
+sitab1.mnmel$avg = round(sitab1.mnmel$avg, 2)
+sitab1.lomel$lo = round(sitab1.lomel$lo, 2)
+sitab1.himel$hi = round(sitab1.himel$hi, 2)
+
+#make new id column that contains Farm, Management, Depth, and fraction
+sitab1.mnmel$id = paste(sitab1.mnmel$id3, sitab1.mnmel$frac, sep = " ")
+sitab1.lomel$id = paste(sitab1.lomel$id3, sitab1.lomel$frac, sep = " ")
+sitab1.himel$id = paste(sitab1.himel$id3, sitab1.himel$frac, sep = " ")
+
+#remove id2 and frac columns
+sitab1.mnmel = sitab1.mnmel[ , -c(1:2)]
+sitab1.lomel = sitab1.lomel[ , -c(1:2)]
+sitab1.himel = sitab1.himel[ , -c(1:2)]
+
+#merge tables together
+sitab1.1 = merge(sitab1.mnmel, sitab1.lomel, by.x = "id", by.y = "id")
+sitab1.2 = merge(sitab1.1, sitab1.himel, by.x = "id", by.y = "id")
+
+#make new column that contains the mean +- the upper and lower quartiles
+sitab1.2$all = paste(sitab1.2$avg, " (", sitab1.2$lo, ", ", sitab1.2$hi, ")", sep = "")
+
+#split the id string
+sps <- data.frame(do.call(rbind, str_split(sitab1.2$id, " ")))
+names(sps) <- c("farm", "mgmt", "depth", "frac")
+
+#add to dataframe
+sitab1.3 = cbind(sps, sitab1.2)
+
+#remove columns for id, avg, lo, and hi
+sitab1.3 = sitab1.3[ , -c(5:8)]
+
+#select rows that are just FRF Graze
+sitab1.4 = sitab1.3[sitab1.3$farm == "FRF" & sitab1.3$mgmt == "Graze", ]
+names(sitab1.4) = c("farm", "mgmt", "depth", "frac", "FRF Graze")
+
+#add columns for FRF Hay, etc.
+sitab1.5 = cbind(sitab1.4, "FRF Hay" = sitab1.3[sitab1.3$farm == "FRF" & sitab1.3$mgmt == "Hay",]$all, 
+               "ORG Graze" = sitab1.3[sitab1.3$farm == "ORG" & sitab1.3$mgmt == "Graze",]$all,
+               "ORG Hay" = sitab1.3[sitab1.3$farm == "ORG" & sitab1.3$mgmt == "Hay",]$all,
+               "WNF Graze" = sitab1.3[sitab1.3$farm == "WNF" & sitab1.3$mgmt == "Graze",]$all,
+               "WNF Hay" = sitab1.3[sitab1.3$farm == "WNF" & sitab1.3$mgmt == "Hay",]$all)
+
+#export tables
+
+setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-Tradeoffs\\Organic-Dairy\\Data")
+write.table(sitab1.5, "SI_Table_1.csv", col.names = T, row.names = F, sep = ",")
+write.table(tab4.5, "Table_4.csv", col.names = T, row.names = F, sep = ",")
+
+##############################################################################################
+##############################################################################################
+##############################################################################################
 
 #Plot Results
+
+boxplot(BD ~ Treatment * Farm, data = dat.3, subset = dat.3$Elevation == 50)
 
 ##########
 #Figure 1#
@@ -2098,5 +3142,7 @@ mtext(side = 4, expression(paste("("*mu*g~NO[3]*~g~soil^{-1}*~day^{-1}*")")), li
 mtext(side = 1, "Farm", outer = T, line = 2.5)
 
 dev.off()
+
+
 
 

@@ -6,7 +6,6 @@
 #production in three organic dairy farms located across New England.
 
 #Code developed by A. Contosta.
-#Most recent version 9/16/2019
 
 ##############################################################################################
 ##############################################################################################
@@ -739,6 +738,267 @@ summary((glht(MCseanitr.year, linfct = mcp(year = "Tukey"))))
 
 summary((glht(MCseanitr.mgmt_year, linfct = mcp(year_mgmt = "Tukey"))))
 
+##############################
+#Repeated measures moisture  #
+##############################
+
+lme.moist = gls(moist ~ year + farm + site + year:site + year:farm + farm:site + year:farm:site, na.action = na.omit, data = flux.calc)
+lme.moist = lme(fixed = moist ~ year + farm + site + year:site + year:farm + farm:site + year:farm:site, random = ~1|ID2, na.action = na.omit, data = flux.calc)
+anova(gls.moist, lme.moist)
+#random effect improves overall model fit
+
+var.moist.1 = update(lme.moist, weights = varIdent(form = ~ 1 | year))
+var.moist.2 = update(lme.moist, weights = varIdent(form = ~ 1 | farm))
+var.moist.3 = update(lme.moist, weights = varIdent(form = ~ 1 | site))
+var.moist.4 = update(lme.moist, weights = varIdent(form = ~ 1 | year*farm))
+var.moist.5 = update(lme.moist, weights = varIdent(form = ~ 1 | year*site))
+var.moist.6 = update(lme.moist, weights = varIdent(form = ~ 1 | year*farm*site))
+
+BIC(lme.moist, var.moist.1, var.moist.2, var.moist.3, var.moist.4, var.moist.5, var.moist.6)
+#variance structure of farm improves overall model fit
+
+#examine the effect of an autocorrelation structure
+ac.moist = update(lme.moist, correlation = corAR1(form = ~ ydoy|ID2))
+BIC(lme.moist, ac.moist)
+#autocorrelation improves model fit
+
+#combine variance and autocorrelation structures
+var.ac.moist = update(lme.moist, weights = varIdent(form = ~ 1| farm), correlation = corAR1(form = ~ ID2|ydoy))
+BIC(gls.moist, var.moist.2, ac.moist, var.ac.moist)
+#model fit improved with both variance and autocorrelation structures
+
+#examine fit of fixed effects
+anova(var.moist.1, type = "marginal")
+
+#refit with ML to select fixed effects
+moist.1 = update(var.moist.1, method = "ML")
+
+#remove three-way interaction to test significance
+moist.2 = update(moist.1, moist ~ year + farm + site + year:site + year:farm + farm:site)
+anova(moist.1, moist.2)
+#no significant difference in model fit
+
+#remove two-way interaction to test significance
+
+#remove the year:site interaction
+moist.3 = update(moist.1, moist ~ year + farm + site + year:farm + farm:site)
+
+#remove the year:farm interaction
+moist.4 = update(moist.1, moist ~ year + farm + site + year:site + farm:site)
+
+#remove the farm:site interaction
+moist.5 = update(moist.1, moist ~ year + farm + site + year:site + year:farm)
+
+anova(moist.2, moist.3)
+anova(moist.2, moist.4)
+anova(moist.2, moist.5)
+
+#significant differences when year:farm interaction is removed
+#moist.6 now full model
+moist.6 = update(moist.1, moist ~ year + farm + site + year:farm)
+#all effects significant.
+
+#refit with REML for obtaining summary statistics
+moist.fin = update(moist.6, method = 'REML')
+
+anova(moist.fin, type = "marginal")
+summary(moist.fin)
+
+plot(moist.fin)
+qqnorm(moist.fin)
+
+#pairwise comparisons
+
+#create models for all single factor and interaction terms
+
+#create models for all single factor and interaction terms
+MCtsnitr.farm <- update(moist.fin, moist ~ farm)
+MCtsnitr.year <- update(moist.fin, moist ~ year)
+MCtsnitr.site <- update(moist.fin, moist ~ site)
+
+MCtsnitr.farm_year <- update(moist.fin, moist ~ farm_year)
+
+#use glht function and acquire summary of multiple comparisons
+#set test adjustment as appropriate.
+
+summary((glht(MCtsnitr.farm, limoistct = mcp(farm = "Tukey"))))
+summary((glht(MCtsnitr.site, limoistct = mcp(site = "Tukey"))))
+summary((glht(MCtsnitr.year, limoistct = mcp(year = "Tukey"))))
+
+summary((glht(MCtsnitr.farm_year, limoistct = mcp(farm_year = "Tukey"))))
+
+
+
+########################################
+#SI Table 2 (Instaneous Fluxes)
+########################################
+
+flux.calcdt = data.table(flux.calc)
+flux.calcdt$id3 = paste(flux.calcdt$farm, flux.calcdt$year, flux.calcdt$site, sep = " ")
+
+sitab2 = flux.calcdt[ , list(mfinco = mean(finco, na.rm = T), lofinco = quantile(finco, 0.025, na.rm = T),
+                     hifinco = quantile(finco, 0.975, na.rm = T),
+                     mposno = mean(posno, na.rm = T), loposno = quantile(posno, 0.025, na.rm = T),
+                     hiposno = quantile(posno, 0.975, na.rm = T),
+                     mt_5cm = mean(t_5cm, na.rm = T), lot_5cm = quantile(t_5cm, 0.025, na.rm = T),
+                     hit_5cm = quantile(t_5cm, 0.975, na.rm = T),
+                     mt_10cm = mean(t_10cm, na.rm = T), lot_10cm = quantile(t_10cm, 0.025, na.rm = T),
+                     hit_10cm = quantile(t_10cm, 0.975, na.rm = T),
+                     mmoist = mean(moist, na.rm = T), lomoist = quantile(moist, 0.025, na.rm = T),
+                     himoist = quantile(moist, 0.975, na.rm = T)), by = id3]
+
+#separate out just the mean values and rename
+sitab2.mn = sitab2[ , c("id3", "mfinco", "mposno", "mt_5cm", "mt_10cm", "mmoist")]
+names(sitab2.mn) = c("id3", "finco", "posno", "t_5cm", "t_10cm", "moist")
+
+#separate out lower quartile
+sitab2.lo = sitab2[ , c("id3", "lofinco", "loposno", "lot_5cm", "lot_10cm", "lomoist")]
+names(sitab2.lo) = c("id3", "finco", "posno", "t_5cm", "t_10cm", "moist")
+
+#separate out upper quartile
+sitab2.hi = sitab2[ , c("id3", "hifinco", "hiposno", "hit_5cm", "hit_10cm", "himoist")]
+names(sitab2.hi) = c("id3", "finco", "posno", "t_5cm", "t_10cm", "moist")
+
+#melt tables and add column names
+sitab2.mnmel = melt(sitab2.mn, id.vars = "id3")
+names(sitab2.mnmel) = c("id3", "var", "avg")
+
+sitab2.lomel = melt(sitab2.lo, id.vars = "id3")
+names(sitab2.lomel) = c("id3", "var", "lo")
+
+sitab2.himel = melt(sitab2.hi, id.vars = "id3")
+names(sitab2.himel) = c("id3", "var", "hi")
+
+#round avg, lo, and hi values to two sig. digs.
+sitab2.mnmel$avg = round(sitab2.mnmel$avg, 2)
+sitab2.lomel$lo = round(sitab2.lomel$lo, 2)
+sitab2.himel$hi = round(sitab2.himel$hi, 2)
+
+#make new id column that contains Farm, Management, and var
+sitab2.mnmel$id = paste(sitab2.mnmel$id3, sitab2.mnmel$var, sep = " ")
+sitab2.lomel$id = paste(sitab2.lomel$id3, sitab2.lomel$var, sep = " ")
+sitab2.himel$id = paste(sitab2.himel$id3, sitab2.himel$var, sep = " ")
+
+#remove id3 and year columns
+sitab2.mnmel = sitab2.mnmel[ , -c(1:2)]
+sitab2.lomel = sitab2.lomel[ , -c(1:2)]
+sitab2.himel = sitab2.himel[ , -c(1:2)]
+
+#merge tables together
+sitab2.1 = merge(sitab2.mnmel, sitab2.lomel, by.x = "id", by.y = "id")
+sitab2.2 = merge(sitab2.1, sitab2.himel, by.x = "id", by.y = "id")
+
+#make new column that contains the mean +- the upper and lower quartiles
+sitab2.2$all = paste(sitab2.2$avg, " (", sitab2.2$lo, ", ", sitab2.2$hi, ")", sep = "")
+
+#split the id string
+sps <- data.frame(do.call(rbind, str_split(sitab2.2$id, " ")))
+names(sps) <- c("farm", "year", "mgmt", "var")
+
+#add to dataframe
+sitab2.3 = cbind(sps, sitab2.2)
+
+#remove columns for id, avg, lo, and hi
+sitab2.3 = sitab2.3[ , -c(5:8)]
+
+#select rows that are just FRF Graze
+sitab2.4 = sitab2.3[sitab2.3$farm == "1" & sitab2.3$mgmt == "1", ]
+names(sitab2.4) = c("farm", "year", "mgmt", "var", "FRF Graze")
+
+#add columns for 1 2, etc.
+sitab2.5 = cbind(sitab2.4, "FRF Hay" = sitab2.3[sitab2.3$farm == "1" & sitab2.3$mgmt == "2",]$all, 
+               "ORG Graze" = sitab2.3[sitab2.3$farm == "2" & sitab2.3$mgmt == "1",]$all,
+               "ORG Hay" = sitab2.3[sitab2.3$farm == "2" & sitab2.3$mgmt == "2",]$all,
+               "WNF Graze" = sitab2.3[sitab2.3$farm == "3" & sitab2.3$mgmt == "1",]$all,
+               "WNF Hay" = sitab2.3[sitab2.3$farm == "3" & sitab2.3$mgmt == "2",]$all)
+
+#export table
+
+setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-Tradeoffs\\Organic-Dairy\\Data")
+write.table(sitab2.5, "SI_Table_2.csv", col.names = T, row.names = F, sep = ",")
+
+
+########################################
+#SI Table 3 (Seasonal Fluxes)
+########################################
+
+all.calc.4dt = data.table(all.calc.4)
+all.calc.4dt$id3 = paste(all.calc.4dt$farm, all.calc.4dt$year, all.calc.4dt$mgmt, sep = " ")
+
+sitab3 = all.calc.4dt[ , list(mtotc_g = mean(totc_g, na.rm = T), lototc_g = quantile(totc_g, 0.025, na.rm = T),
+                             hitotc_g = quantile(totc_g, 0.975, na.rm = T),
+                             mtotn_g = mean(totn_g, na.rm = T), lototn_g = quantile(totn_g, 0.025, na.rm = T),
+                             hitotn_g = quantile(totn_g, 0.975, na.rm = T)), by = id3]
+
+#separate out just the mean values and rename
+sitab3.mn = sitab3[ , c("id3", "mtotc_g", "mtotn_g")]
+names(sitab3.mn) = c("id3", "totc_g", "totn_g")
+
+#separate out lower quartile
+sitab3.lo = sitab3[ , c("id3", "lototc_g", "lototn_g")]
+names(sitab3.lo) = c("id3", "totc_g", "totn_g")
+
+#separate out upper quartile
+sitab3.hi = sitab3[ , c("id3", "hitotc_g", "hitotn_g")]
+names(sitab3.hi) = c("id3", "totc_g", "totn_g")
+
+#melt tables and add column names
+sitab3.mnmel = melt(sitab3.mn, id.vars = "id3")
+names(sitab3.mnmel) = c("id3", "var", "avg")
+
+sitab3.lomel = melt(sitab3.lo, id.vars = "id3")
+names(sitab3.lomel) = c("id3", "var", "lo")
+
+sitab3.himel = melt(sitab3.hi, id.vars = "id3")
+names(sitab3.himel) = c("id3", "var", "hi")
+
+#round avg, lo, and hi values to two sig. digs.
+sitab3.mnmel$avg = round(sitab3.mnmel$avg, 2)
+sitab3.lomel$lo = round(sitab3.lomel$lo, 2)
+sitab3.himel$hi = round(sitab3.himel$hi, 2)
+
+#make new id column that contains Farm, Management, and var
+sitab3.mnmel$id = paste(sitab3.mnmel$id3, sitab3.mnmel$var, sep = " ")
+sitab3.lomel$id = paste(sitab3.lomel$id3, sitab3.lomel$var, sep = " ")
+sitab3.himel$id = paste(sitab3.himel$id3, sitab3.himel$var, sep = " ")
+
+#remove id3 and year columns
+sitab3.mnmel = sitab3.mnmel[ , -c(1:2)]
+sitab3.lomel = sitab3.lomel[ , -c(1:2)]
+sitab3.himel = sitab3.himel[ , -c(1:2)]
+
+#merge tables together
+sitab3.1 = merge(sitab3.mnmel, sitab3.lomel, by.x = "id", by.y = "id")
+sitab3.2 = merge(sitab3.1, sitab3.himel, by.x = "id", by.y = "id")
+
+#make new column that contains the mean +- the upper and lower quartiles
+sitab3.2$all = paste(sitab3.2$avg, " (", sitab3.2$lo, ", ", sitab3.2$hi, ")", sep = "")
+
+#split the id string
+sps <- data.frame(do.call(rbind, str_split(sitab3.2$id, " ")))
+names(sps) <- c("farm", "year", "mgmt", "var")
+
+#add to dataframe
+sitab3.3 = cbind(sps, sitab3.2)
+
+#remove columns for id, avg, lo, and hi
+sitab3.3 = sitab3.3[ , -c(5:8)]
+
+#select rows that are just FRF Graze
+sitab3.4 = sitab3.3[sitab3.3$farm == "1" & sitab3.3$mgmt == "G", ]
+names(sitab3.4) = c("farm", "year", "mgmt", "var", "FRF Graze")
+
+#add columns for 1 H, etc.
+sitab3.5 = cbind(sitab3.4, "FRF Hay" = sitab3.3[sitab3.3$farm == "1" & sitab3.3$mgmt == "H",]$all, 
+                 "ORG Graze" = sitab3.3[sitab3.3$farm == "2" & sitab3.3$mgmt == "G",]$all,
+                 "ORG Hay" = sitab3.3[sitab3.3$farm == "2" & sitab3.3$mgmt == "H",]$all,
+                 "WNF Graze" = sitab3.3[sitab3.3$farm == "3" & sitab3.3$mgmt == "G",]$all,
+                 "WNF Hay" = sitab3.3[sitab3.3$farm == "3" & sitab3.3$mgmt == "H",]$all)
+
+#export table
+
+setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-Tradeoffs\\Organic-Dairy\\Data")
+write.table(sitab3.5, "SI_Table_3.csv", col.names = T, row.names = F, sep = ",")
 
 
 ################################################################################

@@ -50,8 +50,8 @@ bio = read.table("bio.csv", head = TRUE, sep = ",")
 bio$totdry_2 = na.approx(bio$totdry, na.rm = F)
 
 #convert dry matter to kg C and kg C / ha
-bio$kgha = bio$totdry_2 * (10 / 1) * (10000 / 1000)
-bio$kgcha = bio$totdry_2 * (10 / 1) * (10000 / 1000) * 0.45
+bio$kgha = bio$totdry_2 * (10 / 1) * (1e5 / 1000)
+bio$kgcha = bio$totdry_2 * (10 / 1) * (1e5 / 1000) * 0.45
 
 #export table with interpolated values
 write.table(bio, file = paste("bio_int.csv"), sep = ",", na="NA", append=FALSE, col.names=TRUE, row.names = FALSE)
@@ -90,7 +90,6 @@ bio.3 = bio.1[ , list(Farm = unique(Farm), Field = unique(Field), Trt = unique(T
 ##############################################################################################
 
 #Data characterization (normality, homogeneity of variance, correlation)
-
 
 #####################
 #Normal distribution#
@@ -242,6 +241,89 @@ qqnorm(bio.fin)
 #set test adjustment as appropriate.
 summary((glht(bio.fin, linfct = mcp(Farm = "Tukey"))))
 
+
+########################################
+#SI Table 4 (Biomass Production)
+########################################
+
+bio.3dt = data.table(bio.3)
+bio.3dt$id3 = paste(bio.3dt$Farm, bio.3dt$Trt, sep = " ")
+
+sitab4 = bio.3dt[ , list(mcsum = mean(csum, na.rm = T), locsum = quantile(csum, 0.025, na.rm = T),
+                              hicsum = quantile(csum, 0.975, na.rm = T)), by = id3]
+
+#separate out just the mean values and rename
+sitab4.mn = sitab4[ , c("id3", "mcsum")]
+names(sitab4.mn) = c("id3", "csum")
+
+#separate out lower quartile
+sitab4.lo = sitab4[ , c("id3", "locsum")]
+names(sitab4.lo) = c("id3", "csum")
+
+#separate out upper quartile
+sitab4.hi = sitab4[ , c("id3", "hicsum")]
+names(sitab4.hi) = c("id3", "csum")
+
+#melt tables and add column names
+sitab4.mnmel = melt(sitab4.mn, id.vars = "id3")
+names(sitab4.mnmel) = c("id3", "var", "avg")
+
+sitab4.lomel = melt(sitab4.lo, id.vars = "id3")
+names(sitab4.lomel) = c("id3", "var", "lo")
+
+sitab4.himel = melt(sitab4.hi, id.vars = "id3")
+names(sitab4.himel) = c("id3", "var", "hi")
+
+#round avg, lo, and hi values to two sig. digs.
+sitab4.mnmel$avg = round(sitab4.mnmel$avg, 2)
+sitab4.lomel$lo = round(sitab4.lomel$lo, 2)
+sitab4.himel$hi = round(sitab4.himel$hi, 2)
+
+#make new id column that contains Farm, Management, and var
+sitab4.mnmel$id = paste(sitab4.mnmel$id3, sitab4.mnmel$var, sep = " ")
+sitab4.lomel$id = paste(sitab4.lomel$id3, sitab4.lomel$var, sep = " ")
+sitab4.himel$id = paste(sitab4.himel$id3, sitab4.himel$var, sep = " ")
+
+#remove id3 and year columns
+sitab4.mnmel = sitab4.mnmel[ , -c(1:2)]
+sitab4.lomel = sitab4.lomel[ , -c(1:2)]
+sitab4.himel = sitab4.himel[ , -c(1:2)]
+
+#merge tables together
+sitab4.1 = merge(sitab4.mnmel, sitab4.lomel, by.x = "id", by.y = "id")
+sitab4.2 = merge(sitab4.1, sitab4.himel, by.x = "id", by.y = "id")
+
+#make new column that contains the mean +- the upper and lower quartiles
+sitab4.2$all = paste(sitab4.2$avg, " (", sitab4.2$lo, ", ", sitab4.2$hi, ")", sep = "")
+
+#split the id string
+sps <- data.frame(do.call(rbind, str_split(sitab4.2$id, " ")))
+names(sps) <- c("farm", "mgmt", "var")
+
+#add to dataframe
+sitab4.3 = cbind(sps, sitab4.2)
+
+#remove columns for id, avg, lo, and hi
+sitab4.3 = sitab4.3[ , -c(4:7)]
+
+#select rows that are just FRF Graze
+sitab4.4 = sitab4.3[sitab4.3$farm == "FRF" & sitab4.3$mgmt == "Graze", ]
+names(sitab4.4) = c("farm", "mgmt", "var", "FRF Graze")
+
+#add columns for FRF Hay, etc.
+sitab4.5 = cbind(sitab4.4, "FRF Hay" = sitab4.3[sitab4.3$farm == "FRF" & sitab4.3$mgmt == "Hay",]$all, 
+                 "ORG Graze" = sitab4.3[sitab4.3$farm == "ORG" & sitab4.3$mgmt == "Graze",]$all,
+                 "ORG Hay" = sitab4.3[sitab4.3$farm == "ORG" & sitab4.3$mgmt == "Hay",]$all,
+                 "WNF Graze" = sitab4.3[sitab4.3$farm == "WNF" & sitab4.3$mgmt == "Graze",]$all,
+                 "WNF Hay" = sitab4.3[sitab4.3$farm == "WNF" & sitab4.3$mgmt == "Hay",]$all)
+
+#export table
+
+setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-Tradeoffs\\Organic-Dairy\\Data")
+write.table(sitab4.5, "SI_Table_4.csv", col.names = T, row.names = F, sep = ",")
+
+
+
 ##############################################################################################
 ##############################################################################################
 ##############################################################################################
@@ -259,13 +341,13 @@ setwd("C:\\Users\\alix\\Box Sync\\UNH\\Projects\\USDA_ORG\\R Projects\\All-Farm-
 pdf.options(width= 7.5, height= 3.5, paper="letter", pointsize=12)
 
 #name pdf export file
-pdf(file="Figure_2_Revised.pdf")
+pdf(file="Biomass.pdf")
 
 par(mfrow = c (1,3), mar = c(0.5, 0.5, 0.5, 0.5), oma = c(5,5,5,5))
 
 #FRF
-with(bio.2[bio.2$ID == "FRF Graze",], plot(DATETIME, mcsum, type = "n", lwd = 2, lty = 1, col = "coral", yaxt = "n",
-                    ylim = c(0,6000), xlab = " ", ylab = " ", main = " ", cex.axis = 1.25, cex.main = 1.5))
+plot(mcsum ~ DATETIME, data = bio.2, subset = bio.2$ID == "FRF Graze", type = "n", lwd = 2, lty = 1, col = "coral", yaxt = "n",
+                    xlab = " ", ylab = " ",  log = "y", ylim = c(1000, 60000), main = " ", cex.axis = 1.25, cex.main = 1.5)#ylim = c(0,60000), 
 
 with(bio.2[bio.2$ID == "FRF Graze",], lines(DATETIME, mincsum, col = 'coral', lwd = 1, lty = 2))
 with(bio.2[bio.2$ID == "FRF Graze",], lines(DATETIME, maxcsum, col = 'coral', lwd = 1, lty = 2))
@@ -280,24 +362,24 @@ with(bio.2[bio.2$ID == "FRF Hay",], polygon(c(DATETIME, rev(DATETIME)), c(mincsu
                     col = adjustcolor("gray30", alpha = 0.15), border = NA))
 with(bio.2[bio.2$ID == "FRF Hay",], lines(DATETIME, mcsum, lwd = 2, lty = 1, col = "gray30"))
 
-axis(2, at = c(1000, 3000, 5000), cex.axis = 1.5)
+axis(2, at = c(1000, 5000, 20000, 50000), lab = c(1, 5, 20, 50), cex.axis = 1.5)
 mtext(side = 1, "Sampling Date", cex = 1, line = 3, outer = T)
-mtext(side = 2, expression("Biomass Carbon (kg C" *~ha^{-1}*")"), cex = 1, line = 3)
+mtext(side = 2, expression("Biomass Carbon (t C" *~ha^{-1}*")"), cex = 1, line = 3)
 
-legend( x="topleft", 
+legend( x="bottomleft", 
         legend=c("Grazed", "Hayed", NA, NA),
         col=c("coral","gray30"), lwd = 2, lty = c(1, 1, NA, NA), bty = "n",
         pch=c(NA,NA, NA, NA), pt.cex = 3, cex = 1.25)
 
-legend( x="topleft", 
+legend( x="bottomleft", 
         legend=c(NA, NA, NA, NA), 
         col =c(adjustcolor("coral", alpha = 0.15), 
                  adjustcolor("gray30", alpha = 0.15)), lwd=2, lty=c(0, 0, 0, 0), bty = "n",
         pch=c(15,15, NA, NA), pt.cex = 3, cex = 1.25)
 
 #ORG
-with(bio.2[bio.2$ID == "ORG Graze",], plot(DATETIME, mcsum, type = "n", lwd = 2, lty = 1, col = "coral", yaxt = "n",
-                                           ylim = c(0,6000), xlab = " ", ylab = " ", main = " ", cex.axis = 1.25, cex.main = 1.5))
+with(bio.2[bio.2$ID == "ORG Graze",], plot(DATETIME, mcsum, type = "n", lwd = 2, lty = 1, col = "coral", yaxt = "n", ylim = c(1000, 60000),
+                                          xlab = " ", ylab = " ", log = "y", main = " ", cex.axis = 1.25, cex.main = 1.5))
 
 with(bio.2[bio.2$ID == "ORG Graze",], lines(DATETIME, mincsum, col = 'coral', lwd = 1, lty = 2))
 with(bio.2[bio.2$ID == "ORG Graze",], lines(DATETIME, maxcsum, col = 'coral', lwd = 1, lty = 2))
@@ -314,7 +396,7 @@ with(bio.2[bio.2$ID == "ORG Hay",], lines(DATETIME, mcsum, lwd = 2, lty = 1, col
 
 #WNF
 with(bio.2[bio.2$ID == "WNF Graze",], plot(DATETIME, mcsum, type = "n", lwd = 2, lty = 1, col = "coral", yaxt = "n",
-                                           ylim = c(0,6000), xlab = " ", ylab = " ", main = " ", cex.axis = 1.25, cex.main = 1.5))
+                                           ylim = c(1000,60000), xlab = " ", ylab = " ", log = "y", main = " ", cex.axis = 1.25, cex.main = 1.5))
 
 with(bio.2[bio.2$ID == "WNF Graze",], lines(DATETIME, mincsum, col = 'coral', lwd = 1, lty = 2))
 with(bio.2[bio.2$ID == "WNF Graze",], lines(DATETIME, maxcsum, col = 'coral', lwd = 1, lty = 2))
